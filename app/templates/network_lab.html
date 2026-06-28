@@ -1,177 +1,231 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="lab-header">
-  <h1><i class="fas fa-network-wired"></i> Network Lab</h1>
-  <p>Interactive Computer Networks demonstrations — real tools, real protocols.</p>
+<div class="lab-header" id="lab-header-card">
+  <h1><i class="fas fa-network-wired"></i> Computer Networks Lab</h1>
+  <p>Interactive educational dashboard. Learn TCP/IP encapsulation, HTTP headers, subnet math, and proxy load distribution.</p>
 </div>
 
-<!-- ── TOPOLOGY ─────────────────────────────────────────── -->
-<div class="lab-card" id="topology-panel">
-  <h2 class="lab-card-title"><i class="fas fa-project-diagram"></i> Network Topology</h2>
-  <p class="lab-subtitle">How your request travels through the CN Pro infrastructure.</p>
-  <div class="topology">
-    <div class="topo-node client">
-      <i class="fas fa-laptop"></i>
-      <span>Your Browser</span>
-      <small>HTTP Client</small>
-    </div>
-    <div class="topo-arrow animated-arrow">
-      <span class="arrow-label">HTTP :80<br>TCP/IP</span>
-      <div class="arrow-line"><div class="packet"></div></div>
-    </div>
-    <div class="topo-node proxy">
-      <i class="fas fa-server"></i>
-      <span>Nginx Proxy</span>
-      <small>Load Balancer</small>
-    </div>
-    <div class="topo-split">
-      <div class="split-branch">
-        <div class="topo-arrow-small"><div class="arrow-line-sm"><div class="packet sm"></div></div></div>
-        <div class="topo-node app1">
-          <i class="fab fa-python"></i>
-          <span>webapp1</span>
-          <small>Flask :5000</small>
+<!-- Modern Facebook-style Sidebar Layout -->
+<div class="lab-layout">
+  
+  <!-- Left Sidebar Navigation -->
+  <div class="lab-sidebar-nav">
+    <button class="lab-nav-item active" id="btn-topology" onclick="showPanel('topology-panel', this)">
+      <i class="fas fa-project-diagram"></i>
+      <span>Network Topology</span>
+    </button>
+    <button class="lab-nav-item" id="btn-osi" onclick="showPanel('osi-panel', this)">
+      <i class="fas fa-layer-group"></i>
+      <span>OSI Encapsulation</span>
+    </button>
+    <button class="lab-nav-item" id="btn-headers" onclick="showPanel('headers-panel', this)">
+      <i class="fas fa-glasses"></i>
+      <span>Header Inspector</span>
+    </button>
+    <button class="lab-nav-item" id="btn-diagnostics" onclick="showPanel('diagnostics-panel', this)">
+      <i class="fas fa-terminal"></i>
+      <span>Diagnostics Console</span>
+    </button>
+    <button class="lab-nav-item" id="btn-lb" onclick="showPanel('lb-panel', this)">
+      <i class="fas fa-balance-scale"></i>
+      <span>Load Balancer</span>
+    </button>
+  </div>
+
+  <!-- Right Details Area -->
+  <div class="lab-content-area">
+
+    <!-- ── TOPOLOGY ─────────────────────────────────────────── -->
+    <div class="lab-card" id="topology-panel">
+      <h2 class="lab-card-title"><i class="fas fa-project-diagram"></i> Network Topology</h2>
+      <p class="lab-subtitle">How your request travels through the CN Pro infrastructure.</p>
+      <div class="topology">
+        <div class="topo-node client">
+          <i class="fas fa-laptop"></i>
+          <span>Your Browser</span>
+          <small>HTTP Client</small>
+        </div>
+        <div class="topo-arrow animated-arrow">
+          <span class="arrow-label">HTTP :80<br>TCP/IP</span>
+          <div class="arrow-line"><div class="packet"></div></div>
+        </div>
+        <div class="topo-node proxy">
+          <i class="fas fa-server"></i>
+          <span>Nginx Proxy</span>
+          <small>Load Balancer</small>
+        </div>
+        <div class="topo-split">
+          <div class="split-branch">
+            <div class="topo-arrow-small"><div class="arrow-line-sm"><div class="packet sm"></div></div></div>
+            <div class="topo-node app1">
+              <i class="fab fa-python"></i>
+              <span>webapp1</span>
+              <small>Flask :5000</small>
+            </div>
+          </div>
+          <div class="split-branch">
+            <div class="topo-arrow-small"><div class="arrow-line-sm"><div class="packet sm delay"></div></div></div>
+            <div class="topo-node app2">
+              <i class="fab fa-python"></i>
+              <span>webapp2</span>
+              <small>Flask :5000</small>
+            </div>
+          </div>
+        </div>
+        <div class="topo-arrow right">
+          <span class="arrow-label">SQL :5432<br>TCP</span>
+          <div class="arrow-line"><div class="packet green"></div></div>
+        </div>
+        <div class="topo-node db">
+          <i class="fas fa-database"></i>
+          <span>PostgreSQL</span>
+          <small>Database</small>
         </div>
       </div>
-      <div class="split-branch">
-        <div class="topo-arrow-small"><div class="arrow-line-sm"><div class="packet sm delay"></div></div></div>
-        <div class="topo-node app2">
-          <i class="fab fa-python"></i>
-          <span>webapp2</span>
-          <small>Flask :5000</small>
+      <div class="topo-legend">
+        <span><span class="dot blue"></span> Client Network</span>
+        <span><span class="dot orange"></span> Proxy / LB</span>
+        <span><span class="dot purple"></span> App Servers</span>
+        <span><span class="dot green"></span> Database Layer</span>
+      </div>
+    </div>
+
+    <!-- ── OSI LAYERS ──────────────────────────────────────── -->
+    <div class="lab-card" id="osi-panel" style="display: none;">
+      <h2 class="lab-card-title"><i class="fas fa-layer-group"></i> OSI Encapsulation Lab</h2>
+      <p class="lab-subtitle">Click any layer to see how a "Create Post" request is encapsulated.</p>
+      <div class="osi-stack">
+        {% set layers = [
+          ('7','Application','HTTP','POST /create_post HTTP/1.1\nHost: 127.0.0.1:5000\nCookie: session=<token>\nContent-Type: application/x-www-form-urlencoded\n\nbody=Hello+World&csrf_token=abc123','The web browser generates an HTTP POST request with your post data. Flask receives, validates CSRF, authenticates the session cookie, and saves to DB.'),
+          ('6','Presentation','Encoding','Data encoded as UTF-8 text.\nURL-encoded form body.\nResponse HTML rendered by Jinja2 template engine.','Handles data format, encoding, and representation. Ensures both sides agree on the data structure.'),
+          ('5','Session','Flask-Login','Session established via Set-Cookie header on login.\nSession token: HMAC-SHA256 signed by SECRET_KEY.\nStateful user identity over stateless HTTP.','Manages ongoing conversation between client and server. Flask-Login maintains user authentication state across requests.'),
+          ('4','Transport','TCP','Source Port: 51423 (ephemeral)\nDestination Port: 5000 (Flask)\nFlags: PSH, ACK\nSeq: 1482910  Ack: 884721\nWindow: 65535','TCP provides reliable, ordered, error-checked delivery. The 3-way handshake (SYN→SYN-ACK→ACK) establishes the connection before data flows.'),
+          ('3','Network','IP','Source IP: 127.0.0.1\nDestination IP: 127.0.0.1\nTTL: 64\nProtocol: 6 (TCP)\nHeader Checksum: 0xb861','IP handles logical addressing and routing. Each packet is routed independently across the network using routing tables.'),
+          ('2','Data Link','Ethernet','Source MAC: 00:0c:29:3a:b1:2f\nDest MAC:   00:0c:29:7e:c4:19\nEtherType:  0x0800 (IPv4)\nFrame Size: 1518 bytes max','Ethernet frames carry IP packets between adjacent nodes. MAC addresses identify devices on the local network segment.'),
+          ('1','Physical','Bits','Signal: electrical pulses / light (fibre) / radio (WiFi)\nData Rate: 1 Gbps (Ethernet) / 802.11ac WiFi\nEncoding: NRZ, Manchester, 4B/5B','The physical transmission of raw bits over copper wire, fibre optic cable, or radio waves.')
+        ] %}
+        {% for num, name, proto, detail, explanation in layers %}
+        <div class="osi-layer" onclick="toggleOSI(this)" data-layer="{{ num }}">
+          <div class="osi-header">
+            <span class="osi-num">L{{ num }}</span>
+            <span class="osi-name">{{ name }}</span>
+            <span class="osi-proto">{{ proto }}</span>
+            <i class="fas fa-chevron-down osi-chevron"></i>
+          </div>
+          <div class="osi-detail">
+            <pre>{{ detail }}</pre>
+            <p class="osi-explanation">{{ explanation }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ── HTTP HEADER INSPECTOR ───────────────────────────── -->
+    <div class="lab-card" id="headers-panel" style="display: none;">
+      <h2 class="lab-card-title"><i class="fas fa-glasses"></i> HTTP Header Inspector</h2>
+      <p class="lab-subtitle">Real headers from your current HTTP connection to this server.</p>
+      <button class="lab-btn" onclick="loadHeaders()"><i class="fas fa-sync-alt"></i> Inspect My Headers</button>
+      <div id="headers-output" class="headers-output hidden"></div>
+    </div>
+
+    <!-- ── DIAGNOSTICS CONSOLE ─────────────────────────────── -->
+    <div class="lab-card" id="diagnostics-panel" style="display: none;">
+      <h2 class="lab-card-title"><i class="fas fa-terminal"></i> Network Diagnostics Console</h2>
+      <p class="lab-subtitle">Execute diagnostic utilities and analyze response metrics.</p>
+      <div class="diag-tabs">
+        <button class="diag-tab active" onclick="switchTab('ping')">Ping</button>
+        <button class="diag-tab" onclick="switchTab('dns')">DNS Lookup</button>
+        <button class="diag-tab" onclick="switchTab('subnet')">Subnet Calculator</button>
+      </div>
+
+      <!-- Ping -->
+      <div id="tab-ping" class="diag-content">
+        <div class="diag-input-row">
+          <input id="ping-host" type="text" placeholder="e.g. google.com or 8.8.8.8" class="lab-input">
+          <button class="lab-btn" onclick="runPing()"><i class="fas fa-wifi"></i> Ping</button>
+        </div>
+        <div class="terminal" id="ping-output"><span class="term-prompt">console: </span>Ready. Enter a host and click Ping.</div>
+      </div>
+
+      <!-- DNS -->
+      <div id="tab-dns" class="diag-content hidden">
+        <div class="diag-input-row">
+          <input id="dns-host" type="text" placeholder="e.g. github.com" class="lab-input">
+          <button class="lab-btn" onclick="runDNS()"><i class="fas fa-search"></i> Lookup</button>
+        </div>
+        <div class="terminal" id="dns-output"><span class="term-prompt">console: </span>Ready. Enter a hostname to resolve.</div>
+      </div>
+
+      <!-- Subnet -->
+      <div id="tab-subnet" class="diag-content hidden">
+        <div class="diag-input-row">
+          <input id="cidr-input" type="text" placeholder="e.g. 192.168.1.0/24" class="lab-input">
+          <button class="lab-btn" onclick="runSubnet()"><i class="fas fa-calculator"></i> Calculate</button>
+        </div>
+        <div class="terminal" id="subnet-output"><span class="term-prompt">console: </span>Enter CIDR notation (e.g. 10.0.0.0/8).</div>
+      </div>
+    </div>
+
+    <!-- ── LOAD BALANCER SIMULATOR ─────────────────────────── -->
+    <div class="lab-card" id="lb-panel" style="display: none;">
+      <h2 class="lab-card-title"><i class="fas fa-balance-scale"></i> Load Balancer Simulator</h2>
+      <p class="lab-subtitle">Simulate how Nginx distributes requests across webapp1 and webapp2.</p>
+      <div class="lb-controls">
+        <select id="lb-algo" class="lab-select">
+          <option value="round_robin">Round Robin (default Nginx)</option>
+          <option value="weighted">Weighted Round Robin</option>
+          <option value="ip_hash">IP Hash (sticky sessions)</option>
+        </select>
+        <input id="lb-requests" type="number" min="1" max="30" value="12" class="lab-input small">
+        <label style="color:var(--secondary-text); font-size:13px; font-weight: 600;">requests</label>
+        <button class="lab-btn" onclick="runLB()"><i class="fas fa-play"></i> Simulate</button>
+      </div>
+      <div id="lb-servers" class="lb-servers hidden">
+        <div class="lb-server" id="lb-s1">
+          <i class="fas fa-server"></i>
+          <strong>webapp1</strong>
+          <small>172.20.0.2:5000</small>
+          <div class="lb-bar-wrap"><div class="lb-bar" id="lb-bar1"></div></div>
+          <span id="lb-count1" class="lb-count">0 req</span>
+        </div>
+        <div class="lb-arrow-center">
+          <i class="fas fa-random"></i>
+          <small id="lb-algo-label">Round Robin</small>
+        </div>
+        <div class="lb-server" id="lb-s2">
+          <i class="fas fa-server"></i>
+          <strong>webapp2</strong>
+          <small>172.20.0.3:5000</small>
+          <div class="lb-bar-wrap"><div class="lb-bar" id="lb-bar2"></div></div>
+          <span id="lb-count2" class="lb-count">0 req</span>
         </div>
       </div>
+      <div class="terminal" id="lb-log" style="max-height:220px; overflow-y:auto;"></div>
     </div>
-    <div class="topo-arrow right">
-      <span class="arrow-label">SQL :5432<br>TCP</span>
-      <div class="arrow-line"><div class="packet green"></div></div>
-    </div>
-    <div class="topo-node db">
-      <i class="fas fa-database"></i>
-      <span>PostgreSQL</span>
-      <small>Database</small>
-    </div>
-  </div>
-  <div class="topo-legend">
-    <span><span class="dot blue"></span> Client Network</span>
-    <span><span class="dot orange"></span> Proxy / LB</span>
-    <span><span class="dot purple"></span> App Servers</span>
-    <span><span class="dot green"></span> Database Layer</span>
-  </div>
-</div>
 
-<!-- ── OSI LAYERS ──────────────────────────────────────── -->
-<div class="lab-card" id="osi-panel">
-  <h2 class="lab-card-title"><i class="fas fa-layer-group"></i> OSI Encapsulation Lab</h2>
-  <p class="lab-subtitle">Click any layer to see how a "Create Post" request is encapsulated.</p>
-  <div class="osi-stack">
-    {% set layers = [
-      ('7','Application','HTTP','POST /create_post HTTP/1.1\nHost: 127.0.0.1:5000\nCookie: session=<token>\nContent-Type: application/x-www-form-urlencoded\n\nbody=Hello+World&csrf_token=abc123','The web browser generates an HTTP POST request with your post data. Flask receives, validates CSRF, authenticates the session cookie, and saves to DB.'),
-      ('6','Presentation','Encoding','Data encoded as UTF-8 text.\nURL-encoded form body.\nResponse HTML rendered by Jinja2 template engine.','Handles data format, encoding, and representation. Ensures both sides agree on the data structure.'),
-      ('5','Session','Flask-Login','Session established via Set-Cookie header on login.\nSession token: HMAC-SHA256 signed by SECRET_KEY.\nStateful user identity over stateless HTTP.','Manages ongoing conversation between client and server. Flask-Login maintains user authentication state across requests.'),
-      ('4','Transport','TCP','Source Port: 51423 (ephemeral)\nDestination Port: 5000 (Flask)\nFlags: PSH, ACK\nSeq: 1482910  Ack: 884721\nWindow: 65535','TCP provides reliable, ordered, error-checked delivery. The 3-way handshake (SYN→SYN-ACK→ACK) establishes the connection before data flows.'),
-      ('3','Network','IP','Source IP: 127.0.0.1\nDestination IP: 127.0.0.1\nTTL: 64\nProtocol: 6 (TCP)\nHeader Checksum: 0xb861','IP handles logical addressing and routing. Each packet is routed independently across the network using routing tables.'),
-      ('2','Data Link','Ethernet','Source MAC: 00:0c:29:3a:b1:2f\nDest MAC:   00:0c:29:7e:c4:19\nEtherType:  0x0800 (IPv4)\nFrame Size: 1518 bytes max','Ethernet frames carry IP packets between adjacent nodes. MAC addresses identify devices on the local network segment.'),
-      ('1','Physical','Bits','Signal: electrical pulses / light (fibre) / radio (WiFi)\nData Rate: 1 Gbps (Ethernet) / 802.11ac WiFi\nEncoding: NRZ, Manchester, 4B/5B','The physical transmission of raw bits over copper wire, fibre optic cable, or radio waves.')
-    ] %}
-    {% for num, name, proto, detail, explanation in layers %}
-    <div class="osi-layer" onclick="toggleOSI(this)" data-layer="{{ num }}">
-      <div class="osi-header">
-        <span class="osi-num">L{{ num }}</span>
-        <span class="osi-name">{{ name }}</span>
-        <span class="osi-proto">{{ proto }}</span>
-        <i class="fas fa-chevron-down osi-chevron"></i>
-      </div>
-      <div class="osi-detail">
-        <pre>{{ detail }}</pre>
-        <p class="osi-explanation">{{ explanation }}</p>
-      </div>
-    </div>
-    {% endfor %}
   </div>
-</div>
-
-<!-- ── HTTP HEADER INSPECTOR ───────────────────────────── -->
-<div class="lab-card" id="headers-panel">
-  <h2 class="lab-card-title"><i class="fas fa-glasses"></i> HTTP Header Inspector</h2>
-  <p class="lab-subtitle">Real headers from your current HTTP connection to this server.</p>
-  <button class="lab-btn" onclick="loadHeaders()"><i class="fas fa-sync-alt"></i> Inspect My Headers</button>
-  <div id="headers-output" class="headers-output hidden"></div>
-</div>
-
-<!-- ── DIAGNOSTICS CONSOLE ─────────────────────────────── -->
-<div class="lab-card" id="diagnostics-panel">
-  <h2 class="lab-card-title"><i class="fas fa-terminal"></i> Network Diagnostics Console</h2>
-  <div class="diag-tabs">
-    <button class="diag-tab active" onclick="switchTab('ping')">Ping</button>
-    <button class="diag-tab" onclick="switchTab('dns')">DNS Lookup</button>
-    <button class="diag-tab" onclick="switchTab('subnet')">Subnet Calculator</button>
-  </div>
-
-  <!-- Ping -->
-  <div id="tab-ping" class="diag-content">
-    <div class="diag-input-row">
-      <input id="ping-host" type="text" placeholder="e.g. google.com or 8.8.8.8" class="lab-input">
-      <button class="lab-btn" onclick="runPing()"><i class="fas fa-wifi"></i> Ping</button>
-    </div>
-    <div class="terminal" id="ping-output"><span class="term-prompt">$ </span>Ready. Enter a host and click Ping.</div>
-  </div>
-
-  <!-- DNS -->
-  <div id="tab-dns" class="diag-content hidden">
-    <div class="diag-input-row">
-      <input id="dns-host" type="text" placeholder="e.g. github.com" class="lab-input">
-      <button class="lab-btn" onclick="runDNS()"><i class="fas fa-search"></i> Lookup</button>
-    </div>
-    <div class="terminal" id="dns-output"><span class="term-prompt">$ </span>Ready. Enter a hostname to resolve.</div>
-  </div>
-
-  <!-- Subnet -->
-  <div id="tab-subnet" class="diag-content hidden">
-    <div class="diag-input-row">
-      <input id="cidr-input" type="text" placeholder="e.g. 192.168.1.0/24" class="lab-input">
-      <button class="lab-btn" onclick="runSubnet()"><i class="fas fa-calculator"></i> Calculate</button>
-    </div>
-    <div class="terminal" id="subnet-output"><span class="term-prompt">$ </span>Enter CIDR notation (e.g. 10.0.0.0/8).</div>
-  </div>
-</div>
-
-<!-- ── LOAD BALANCER SIMULATOR ─────────────────────────── -->
-<div class="lab-card" id="lb-panel">
-  <h2 class="lab-card-title"><i class="fas fa-balance-scale"></i> Load Balancer Simulator</h2>
-  <p class="lab-subtitle">Simulate how Nginx distributes requests across webapp1 and webapp2.</p>
-  <div class="lb-controls">
-    <select id="lb-algo" class="lab-select">
-      <option value="round_robin">Round Robin (default Nginx)</option>
-      <option value="weighted">Weighted Round Robin</option>
-      <option value="ip_hash">IP Hash (sticky sessions)</option>
-    </select>
-    <input id="lb-requests" type="number" min="1" max="30" value="12" class="lab-input small">
-    <label style="color:var(--secondary-text); font-size:13px;">requests</label>
-    <button class="lab-btn" onclick="runLB()"><i class="fas fa-play"></i> Simulate</button>
-  </div>
-  <div id="lb-servers" class="lb-servers hidden">
-    <div class="lb-server" id="lb-s1">
-      <i class="fas fa-server"></i>
-      <strong>webapp1</strong><br>
-      <small>172.20.0.2:5000</small>
-      <div class="lb-bar-wrap"><div class="lb-bar" id="lb-bar1"></div></div>
-      <span id="lb-count1" class="lb-count">0 req</span>
-    </div>
-    <div class="lb-arrow-center"><i class="fas fa-random"></i><br><small id="lb-algo-label">Round Robin</small></div>
-    <div class="lb-server" id="lb-s2">
-      <i class="fas fa-server"></i>
-      <strong>webapp2</strong><br>
-      <small>172.20.0.3:5000</small>
-      <div class="lb-bar-wrap"><div class="lb-bar" id="lb-bar2"></div></div>
-      <span id="lb-count2" class="lb-count">0 req</span>
-    </div>
-  </div>
-  <div class="terminal" id="lb-log" style="max-height:220px; overflow-y:auto;"></div>
 </div>
 
 <script>
+// ── Sidebar Panel Swapping ─────────────────────────────
+function showPanel(panelId, btnEl) {
+  // Hide all panels
+  document.getElementById('topology-panel').style.display = 'none';
+  document.getElementById('osi-panel').style.display = 'none';
+  document.getElementById('headers-panel').style.display = 'none';
+  document.getElementById('diagnostics-panel').style.display = 'none';
+  document.getElementById('lb-panel').style.display = 'none';
+
+  // Show selected panel
+  document.getElementById(panelId).style.display = 'block';
+  
+  // Update active states in sidebar navigation
+  document.querySelectorAll('.lab-nav-item').forEach(b => b.classList.remove('active'));
+  btnEl.classList.add('active');
+}
+
 // ── OSI Toggle ─────────────────────────────────────────
 function toggleOSI(el) {
   const detail = el.querySelector('.osi-detail');
@@ -234,7 +288,7 @@ async function loadHeaders() {
 async function runPing() {
   const host = document.getElementById('ping-host').value.trim();
   if (!host) return;
-  termWrite('ping-output', `<div class="term-line"><span class="term-prompt">$ </span>ping ${host} -n 4</div><div class="term-line dim">Running...</div>`);
+  termWrite('ping-output', `<div class="term-line"><span class="term-prompt">console: </span>ping ${host} -n 4</div><div class="term-line dim">Running...</div>`);
   try {
     const r = await fetch('/api/network/ping', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -245,7 +299,7 @@ async function runPing() {
       termWrite('ping-output', termLine(`Error: ${d.error}`, 'term-error'));
       return;
     }
-    let html = `<div class="term-line"><span class="term-prompt">$ </span>ping ${host} -n 4</div>`;
+    let html = `<div class="term-line"><span class="term-prompt">console: </span>ping ${host} -n 4</div>`;
     d.lines.forEach(l => {
       const cls = l.includes('TTL') || l.includes('time=') ? 'term-success' : l.includes('fail') || l.includes('unreachable') ? 'term-error' : '';
       html += termLine(l, cls);
@@ -261,7 +315,7 @@ async function runPing() {
 async function runDNS() {
   const hostname = document.getElementById('dns-host').value.trim();
   if (!hostname) return;
-  termWrite('dns-output', `<div class="term-line"><span class="term-prompt">$ </span>nslookup ${hostname}</div><div class="term-line dim">Resolving...</div>`);
+  termWrite('dns-output', `<div class="term-line"><span class="term-prompt">console: </span>nslookup ${hostname}</div><div class="term-line dim">Resolving...</div>`);
   try {
     const r = await fetch('/api/network/dns-lookup', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -272,7 +326,7 @@ async function runDNS() {
       termWrite('dns-output', termLine(`DNS Error: ${d.error}`, 'term-error'));
       return;
     }
-    let html = `<div class="term-line"><span class="term-prompt">$ </span>nslookup ${d.hostname}</div>`;
+    let html = `<div class="term-line"><span class="term-prompt">console: </span>nslookup ${d.hostname}</div>`;
     html += termLine(`Server: ${d.server}`);
     html += termLine(`Query Time: ${d.query_time_ms} ms`);
     html += `<div class="term-line dim">─────────────────</div>`;
@@ -291,7 +345,7 @@ async function runDNS() {
 async function runSubnet() {
   const cidr = document.getElementById('cidr-input').value.trim();
   if (!cidr) return;
-  termWrite('subnet-output', `<div class="term-line"><span class="term-prompt">$ </span>ipcalc ${cidr}</div>`);
+  termWrite('subnet-output', `<div class="term-line"><span class="term-prompt">console: </span>ipcalc ${cidr}</div>`);
   try {
     const r = await fetch('/api/network/cidr-calculator', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -316,7 +370,7 @@ async function runSubnet() {
       ['Network Binary',  d.binary_network],
       ['Netmask Binary',  d.binary_netmask],
     ];
-    let html = `<div class="term-line"><span class="term-prompt">$ </span>ipcalc ${cidr}</div>`;
+    let html = `<div class="term-line"><span class="term-prompt">console: </span>ipcalc ${cidr}</div>`;
     rows.forEach(([k, v]) => {
       html += `<div class="term-line"><span class="subnet-key">${k.padEnd(18)}</span><span class="term-ip">${v}</span></div>`;
     });
