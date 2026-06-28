@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or "Facebook Clone" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav>
+    <a href="{{ url_for('main.index') }}" class="logo">facebook</a>
+
+    {% if current_user.is_authenticated %}
+    <div class="nav-links">
+      <a href="{{ url_for('main.feed') }}" class="active"><i class="fas fa-home"></i></a>
+      <a href="{{ url_for('main.network_lab') }}" title="Network Lab"><i class="fas fa-network-wired"></i></a>
+      <a href="{{ url_for('main.profile', username=current_user.username) }}"><i class="fas fa-user"></i></a>
+      <a href="{{ url_for('main.logout') }}"><i class="fas fa-sign-out-alt"></i></a>
+    </div>
+    {% else %}
+    <div class="nav-links">
+      <a href="{{ url_for('main.login') }}">Login</a>
+      <a href="{{ url_for('main.register') }}" class="btn btn-success" style="padding: 8px 16px; color: white;">Create
+        New Account</a>
+    </div>
+    {% endif %}
+  </nav>
+
+  <!-- Main Layout -->
+  <div class="container">
+
+    <!-- Left Sidebar (Shortcuts) -->
+    {% if current_user.is_authenticated %}
+    <div class="sidebar-left">
+      <div class="card">
+        <div class="post-header">
+          <div class="post-avatar">
+            <!-- Placeholder for profile pic -->
+            <img src="https://via.placeholder.com/40" alt="Profile">
+          </div>
+          <div class="post-info">
+            <h4>{{ current_user.username }}</h4>
+          </div>
+        </div>
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 10px 0;">
+        <a href="{{ url_for('main.feed') }}"
+          style="display:block; padding:8px; color:var(--text-color); text-decoration:none; border-radius:6px; font-weight:600;"><i
+            class="fas fa-newspaper" style="color:var(--primary-color); margin-right:10px;"></i> Feed</a>
+        <a href="#"
+          style="display:block; padding:8px; color:var(--text-color); text-decoration:none; border-radius:6px; font-weight:600;"><i
+            class="fas fa-user-friends" style="color:var(--primary-color); margin-right:10px;"></i> Friends</a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <ul class="flash-messages">
+        {% for msg in messages %}
+        <li>{{ msg }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+
+    <!-- Right Sidebar (Contacts/Ads) -->
+    {% if current_user.is_authenticated %}
+    <div class="sidebar-right">
+      <div class="card">
+        <h4 style="color:var(--secondary-text); margin-bottom:10px;">Contacts</h4>
+        <!-- Placeholder contacts -->
+        <p style="color:var(--secondary-text); font-size:13px;">No contacts online</p>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+</body>
+
+</html>

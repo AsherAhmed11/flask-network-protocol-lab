@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Profile Header Card -->
+<div class="card" style="text-align:center;">
+  <div
+    style="width:120px; height:120px; border-radius:50%; background:#ddd; margin:0 auto 15px; overflow:hidden; border:4px solid white; box-shadow:0 1px 2px rgba(0,0,0,0.2);">
+    <img src="https://via.placeholder.com/120" alt="{{ user.username }}"
+      style="width:100%; height:100%; object-fit:cover;">
+  </div>
+  <h2 style="margin-bottom:5px;">{{ user.username }}</h2>
+  <p style="color:var(--secondary-text); margin-bottom:15px;">{{ user.bio or "No bio yet." }}</p>
+
+  {% if user == current_user %}
+  <a href="#" class="btn" style="background:#e4e6eb; color:black; width:auto;">Edit Profile</a>
+  {% elif is_following %}
+  <form action="{{ url_for('main.unfollow', username=user.username) }}" method="post" style="display:inline;">
+    <button type="submit" class="btn" style="background:#e4e6eb; color:black; width:auto;">Following</button>
+  </form>
+  {% else %}
+  <form action="{{ url_for('main.follow', username=user.username) }}" method="post" style="display:inline;">
+    <button type="submit" class="btn btn-success" style="width:auto;">Follow</button>
+  </form>
+  {% endif %}
+</div>
+
+<!-- User Posts -->
+<h4 style="margin-bottom:10px; color:var(--secondary-text);">Posts</h4>
+{% for post in posts %}
+<div class="card">
+  <div class="post-header">
+    <div class="post-avatar">
+      <img src="https://via.placeholder.com/40" alt="{{ post.author.username }}">
+    </div>
+    <div class="post-info">
+      <h4><a href="{{ url_for('main.profile', username=post.author.username) }}"
+          style="color:var(--text-color); text-decoration:none;">{{ post.author.username }}</a></h4>
+      <span>{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+    </div>
+  </div>
+
+  <div class="post-content">
+    {{ post.content }}
+  </div>
+
+  {% if post.image_url %}
+  <div style="margin: -16px -16px 10px -16px;">
+    <img src="{{ post.image_url }}" style="width:100%; display:block;">
+  </div>
+  {% endif %}
+
+  <div class="post-actions">
+    <button class="action-btn"><i class="far fa-thumbs-up"></i> Like</button>
+    <button class="action-btn"><i class="far fa-comment-alt"></i> Comment</button>
+    <button class="action-btn"><i class="fas fa-share"></i> Share</button>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

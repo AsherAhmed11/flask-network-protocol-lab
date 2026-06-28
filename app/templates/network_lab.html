@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="lab-header">
+  <h1><i class="fas fa-network-wired"></i> Network Lab</h1>
+  <p>Interactive Computer Networks demonstrations — real tools, real protocols.</p>
+</div>
+
+<!-- ── TOPOLOGY ─────────────────────────────────────────── -->
+<div class="lab-card" id="topology-panel">
+  <h2 class="lab-card-title"><i class="fas fa-project-diagram"></i> Network Topology</h2>
+  <p class="lab-subtitle">How your request travels through the CN Pro infrastructure.</p>
+  <div class="topology">
+    <div class="topo-node client">
+      <i class="fas fa-laptop"></i>
+      <span>Your Browser</span>
+      <small>HTTP Client</small>
+    </div>
+    <div class="topo-arrow animated-arrow">
+      <span class="arrow-label">HTTP :80<br>TCP/IP</span>
+      <div class="arrow-line"><div class="packet"></div></div>
+    </div>
+    <div class="topo-node proxy">
+      <i class="fas fa-server"></i>
+      <span>Nginx Proxy</span>
+      <small>Load Balancer</small>
+    </div>
+    <div class="topo-split">
+      <div class="split-branch">
+        <div class="topo-arrow-small"><div class="arrow-line-sm"><div class="packet sm"></div></div></div>
+        <div class="topo-node app1">
+          <i class="fab fa-python"></i>
+          <span>webapp1</span>
+          <small>Flask :5000</small>
+        </div>
+      </div>
+      <div class="split-branch">
+        <div class="topo-arrow-small"><div class="arrow-line-sm"><div class="packet sm delay"></div></div></div>
+        <div class="topo-node app2">
+          <i class="fab fa-python"></i>
+          <span>webapp2</span>
+          <small>Flask :5000</small>
+        </div>
+      </div>
+    </div>
+    <div class="topo-arrow right">
+      <span class="arrow-label">SQL :5432<br>TCP</span>
+      <div class="arrow-line"><div class="packet green"></div></div>
+    </div>
+    <div class="topo-node db">
+      <i class="fas fa-database"></i>
+      <span>PostgreSQL</span>
+      <small>Database</small>
+    </div>
+  </div>
+  <div class="topo-legend">
+    <span><span class="dot blue"></span> Client Network</span>
+    <span><span class="dot orange"></span> Proxy / LB</span>
+    <span><span class="dot purple"></span> App Servers</span>
+    <span><span class="dot green"></span> Database Layer</span>
+  </div>
+</div>
+
+<!-- ── OSI LAYERS ──────────────────────────────────────── -->
+<div class="lab-card" id="osi-panel">
+  <h2 class="lab-card-title"><i class="fas fa-layer-group"></i> OSI Encapsulation Lab</h2>
+  <p class="lab-subtitle">Click any layer to see how a "Create Post" request is encapsulated.</p>
+  <div class="osi-stack">
+    {% set layers = [
+      ('7','Application','HTTP','POST /create_post HTTP/1.1\nHost: 127.0.0.1:5000\nCookie: session=<token>\nContent-Type: application/x-www-form-urlencoded\n\nbody=Hello+World&csrf_token=abc123','The web browser generates an HTTP POST request with your post data. Flask receives, validates CSRF, authenticates the session cookie, and saves to DB.'),
+      ('6','Presentation','Encoding','Data encoded as UTF-8 text.\nURL-encoded form body.\nResponse HTML rendered by Jinja2 template engine.','Handles data format, encoding, and representation. Ensures both sides agree on the data structure.'),
+      ('5','Session','Flask-Login','Session established via Set-Cookie header on login.\nSession token: HMAC-SHA256 signed by SECRET_KEY.\nStateful user identity over stateless HTTP.','Manages ongoing conversation between client and server. Flask-Login maintains user authentication state across requests.'),
+      ('4','Transport','TCP','Source Port: 51423 (ephemeral)\nDestination Port: 5000 (Flask)\nFlags: PSH, ACK\nSeq: 1482910  Ack: 884721\nWindow: 65535','TCP provides reliable, ordered, error-checked delivery. The 3-way handshake (SYN→SYN-ACK→ACK) establishes the connection before data flows.'),
+      ('3','Network','IP','Source IP: 127.0.0.1\nDestination IP: 127.0.0.1\nTTL: 64\nProtocol: 6 (TCP)\nHeader Checksum: 0xb861','IP handles logical addressing and routing. Each packet is routed independently across the network using routing tables.'),
+      ('2','Data Link','Ethernet','Source MAC: 00:0c:29:3a:b1:2f\nDest MAC:   00:0c:29:7e:c4:19\nEtherType:  0x0800 (IPv4)\nFrame Size: 1518 bytes max','Ethernet frames carry IP packets between adjacent nodes. MAC addresses identify devices on the local network segment.'),
+      ('1','Physical','Bits','Signal: electrical pulses / light (fibre) / radio (WiFi)\nData Rate: 1 Gbps (Ethernet) / 802.11ac WiFi\nEncoding: NRZ, Manchester, 4B/5B','The physical transmission of raw bits over copper wire, fibre optic cable, or radio waves.')
+    ] %}
+    {% for num, name, proto, detail, explanation in layers %}
+    <div class="osi-layer" onclick="toggleOSI(this)" data-layer="{{ num }}">
+      <div class="osi-header">
+        <span class="osi-num">L{{ num }}</span>
+        <span class="osi-name">{{ name }}</span>
+        <span class="osi-proto">{{ proto }}</span>
+        <i class="fas fa-chevron-down osi-chevron"></i>
+      </div>
+      <div class="osi-detail">
+        <pre>{{ detail }}</pre>
+        <p class="osi-explanation">{{ explanation }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── HTTP HEADER INSPECTOR ───────────────────────────── -->
+<div class="lab-card" id="headers-panel">
+  <h2 class="lab-card-title"><i class="fas fa-glasses"></i> HTTP Header Inspector</h2>
+  <p class="lab-subtitle">Real headers from your current HTTP connection to this server.</p>
+  <button class="lab-btn" onclick="loadHeaders()"><i class="fas fa-sync-alt"></i> Inspect My Headers</button>
+  <div id="headers-output" class="headers-output hidden"></div>
+</div>
+
+<!-- ── DIAGNOSTICS CONSOLE ─────────────────────────────── -->
+<div class="lab-card" id="diagnostics-panel">
+  <h2 class="lab-card-title"><i class="fas fa-terminal"></i> Network Diagnostics Console</h2>
+  <div class="diag-tabs">
+    <button class="diag-tab active" onclick="switchTab('ping')">Ping</button>
+    <button class="diag-tab" onclick="switchTab('dns')">DNS Lookup</button>
+    <button class="diag-tab" onclick="switchTab('subnet')">Subnet Calculator</button>
+  </div>
+
+  <!-- Ping -->
+  <div id="tab-ping" class="diag-content">
+    <div class="diag-input-row">
+      <input id="ping-host" type="text" placeholder="e.g. google.com or 8.8.8.8" class="lab-input">
+      <button class="lab-btn" onclick="runPing()"><i class="fas fa-wifi"></i> Ping</button>
+    </div>
+    <div class="terminal" id="ping-output"><span class="term-prompt">$ </span>Ready. Enter a host and click Ping.</div>
+  </div>
+
+  <!-- DNS -->
+  <div id="tab-dns" class="diag-content hidden">
+    <div class="diag-input-row">
+      <input id="dns-host" type="text" placeholder="e.g. github.com" class="lab-input">
+      <button class="lab-btn" onclick="runDNS()"><i class="fas fa-search"></i> Lookup</button>
+    </div>
+    <div class="terminal" id="dns-output"><span class="term-prompt">$ </span>Ready. Enter a hostname to resolve.</div>
+  </div>
+
+  <!-- Subnet -->
+  <div id="tab-subnet" class="diag-content hidden">
+    <div class="diag-input-row">
+      <input id="cidr-input" type="text" placeholder="e.g. 192.168.1.0/24" class="lab-input">
+      <button class="lab-btn" onclick="runSubnet()"><i class="fas fa-calculator"></i> Calculate</button>
+    </div>
+    <div class="terminal" id="subnet-output"><span class="term-prompt">$ </span>Enter CIDR notation (e.g. 10.0.0.0/8).</div>
+  </div>
+</div>
+
+<!-- ── LOAD BALANCER SIMULATOR ─────────────────────────── -->
+<div class="lab-card" id="lb-panel">
+  <h2 class="lab-card-title"><i class="fas fa-balance-scale"></i> Load Balancer Simulator</h2>
+  <p class="lab-subtitle">Simulate how Nginx distributes requests across webapp1 and webapp2.</p>
+  <div class="lb-controls">
+    <select id="lb-algo" class="lab-select">
+      <option value="round_robin">Round Robin (default Nginx)</option>
+      <option value="weighted">Weighted Round Robin</option>
+      <option value="ip_hash">IP Hash (sticky sessions)</option>
+    </select>
+    <input id="lb-requests" type="number" min="1" max="30" value="12" class="lab-input small">
+    <label style="color:var(--secondary-text); font-size:13px;">requests</label>
+    <button class="lab-btn" onclick="runLB()"><i class="fas fa-play"></i> Simulate</button>
+  </div>
+  <div id="lb-servers" class="lb-servers hidden">
+    <div class="lb-server" id="lb-s1">
+      <i class="fas fa-server"></i>
+      <strong>webapp1</strong><br>
+      <small>172.20.0.2:5000</small>
+      <div class="lb-bar-wrap"><div class="lb-bar" id="lb-bar1"></div></div>
+      <span id="lb-count1" class="lb-count">0 req</span>
+    </div>
+    <div class="lb-arrow-center"><i class="fas fa-random"></i><br><small id="lb-algo-label">Round Robin</small></div>
+    <div class="lb-server" id="lb-s2">
+      <i class="fas fa-server"></i>
+      <strong>webapp2</strong><br>
+      <small>172.20.0.3:5000</small>
+      <div class="lb-bar-wrap"><div class="lb-bar" id="lb-bar2"></div></div>
+      <span id="lb-count2" class="lb-count">0 req</span>
+    </div>
+  </div>
+  <div class="terminal" id="lb-log" style="max-height:220px; overflow-y:auto;"></div>
+</div>
+
+<script>
+// ── OSI Toggle ─────────────────────────────────────────
+function toggleOSI(el) {
+  const detail = el.querySelector('.osi-detail');
+  const chevron = el.querySelector('.osi-chevron');
+  const isOpen = detail.style.display === 'block';
+  document.querySelectorAll('.osi-detail').forEach(d => d.style.display = 'none');
+  document.querySelectorAll('.osi-chevron').forEach(c => c.style.transform = '');
+  document.querySelectorAll('.osi-layer').forEach(l => l.classList.remove('active'));
+  if (!isOpen) {
+    detail.style.display = 'block';
+    chevron.style.transform = 'rotate(180deg)';
+    el.classList.add('active');
+  }
+}
+
+// ── Tab Switching ──────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.diag-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.diag-content').forEach(c => c.classList.add('hidden'));
+  document.getElementById('tab-' + tab).classList.remove('hidden');
+  event.target.classList.add('active');
+}
+
+// ── Terminal Output Helper ─────────────────────────────
+function termWrite(id, html) {
+  document.getElementById(id).innerHTML = html;
+}
+function termLine(text, cls='') {
+  return `<div class="term-line ${cls}">${text}</div>`;
+}
+
+// ── HTTP Headers ───────────────────────────────────────
+async function loadHeaders() {
+  const out = document.getElementById('headers-output');
+  out.classList.remove('hidden');
+  out.innerHTML = '<div class="term-spinner"><i class="fas fa-spinner fa-spin"></i> Fetching headers...</div>';
+  try {
+    const r = await fetch('/api/network/http-headers');
+    const d = await r.json();
+    let html = `<div class="header-meta">
+      <span><i class="fas fa-globe"></i> ${d.method} ${d.url}</span>
+      <span><i class="fas fa-network-wired"></i> ${d.http_version}</span>
+      <span><i class="fas fa-map-marker-alt"></i> Client: ${d.remote_addr}</span>
+      <span><i class="fas fa-list"></i> ${d.header_count} headers</span>
+    </div>`;
+    d.headers.forEach(h => {
+      html += `<div class="header-row">
+        <div class="header-name">${h.name}</div>
+        <div class="header-value">${h.value}</div>
+        <div class="header-explanation">${h.explanation}</div>
+      </div>`;
+    });
+    out.innerHTML = html;
+  } catch(e) {
+    out.innerHTML = `<div class="term-error">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Ping ───────────────────────────────────────────────
+async function runPing() {
+  const host = document.getElementById('ping-host').value.trim();
+  if (!host) return;
+  termWrite('ping-output', `<div class="term-line"><span class="term-prompt">$ </span>ping ${host} -n 4</div><div class="term-line dim">Running...</div>`);
+  try {
+    const r = await fetch('/api/network/ping', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({host})
+    });
+    const d = await r.json();
+    if (d.error) {
+      termWrite('ping-output', termLine(`Error: ${d.error}`, 'term-error'));
+      return;
+    }
+    let html = `<div class="term-line"><span class="term-prompt">$ </span>ping ${host} -n 4</div>`;
+    d.lines.forEach(l => {
+      const cls = l.includes('TTL') || l.includes('time=') ? 'term-success' : l.includes('fail') || l.includes('unreachable') ? 'term-error' : '';
+      html += termLine(l, cls);
+    });
+    html += `<div class="term-line ${d.reachable ? 'term-success' : 'term-error'}">→ Host is ${d.reachable ? '✓ REACHABLE' : '✗ UNREACHABLE'}</div>`;
+    termWrite('ping-output', html);
+  } catch(e) {
+    termWrite('ping-output', termLine('Request failed: ' + e.message, 'term-error'));
+  }
+}
+
+// ── DNS Lookup ─────────────────────────────────────────
+async function runDNS() {
+  const hostname = document.getElementById('dns-host').value.trim();
+  if (!hostname) return;
+  termWrite('dns-output', `<div class="term-line"><span class="term-prompt">$ </span>nslookup ${hostname}</div><div class="term-line dim">Resolving...</div>`);
+  try {
+    const r = await fetch('/api/network/dns-lookup', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({hostname})
+    });
+    const d = await r.json();
+    if (!d.success) {
+      termWrite('dns-output', termLine(`DNS Error: ${d.error}`, 'term-error'));
+      return;
+    }
+    let html = `<div class="term-line"><span class="term-prompt">$ </span>nslookup ${d.hostname}</div>`;
+    html += termLine(`Server: ${d.server}`);
+    html += termLine(`Query Time: ${d.query_time_ms} ms`);
+    html += `<div class="term-line dim">─────────────────</div>`;
+    d.records.forEach(rec => {
+      html += termLine(`${rec.type}: <span class="term-ip">${rec.address}</span>`, 'term-success');
+    });
+    html += `<div class="term-line dim">─────────────────</div>`;
+    html += termLine(`Reverse DNS: ${d.reverse_dns}`);
+    termWrite('dns-output', html);
+  } catch(e) {
+    termWrite('dns-output', termLine('Request failed: ' + e.message, 'term-error'));
+  }
+}
+
+// ── Subnet Calculator ──────────────────────────────────
+async function runSubnet() {
+  const cidr = document.getElementById('cidr-input').value.trim();
+  if (!cidr) return;
+  termWrite('subnet-output', `<div class="term-line"><span class="term-prompt">$ </span>ipcalc ${cidr}</div>`);
+  try {
+    const r = await fetch('/api/network/cidr-calculator', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({cidr})
+    });
+    const d = await r.json();
+    if (!d.success) {
+      termWrite('subnet-output', termLine(`Error: ${d.error}`, 'term-error'));
+      return;
+    }
+    const rows = [
+      ['Address',         d.network_address],
+      ['Broadcast',       d.broadcast_address],
+      ['Netmask',         `${d.netmask} = /${d.prefix_length}`],
+      ['Wildcard Mask',   d.wildcard_mask],
+      ['First Host',      d.first_host],
+      ['Last Host',       d.last_host],
+      ['Usable Hosts',    d.usable_hosts.toLocaleString()],
+      ['Total Addresses', d.total_addresses.toLocaleString()],
+      ['IP Class',        `Class ${d.ip_class}`],
+      ['Private Range',   d.is_private ? 'Yes (RFC1918)' : 'No (Public)'],
+      ['Network Binary',  d.binary_network],
+      ['Netmask Binary',  d.binary_netmask],
+    ];
+    let html = `<div class="term-line"><span class="term-prompt">$ </span>ipcalc ${cidr}</div>`;
+    rows.forEach(([k, v]) => {
+      html += `<div class="term-line"><span class="subnet-key">${k.padEnd(18)}</span><span class="term-ip">${v}</span></div>`;
+    });
+    termWrite('subnet-output', html);
+  } catch(e) {
+    termWrite('subnet-output', termLine('Request failed: ' + e.message, 'term-error'));
+  }
+}
+
+// ── Load Balancer Simulator ────────────────────────────
+async function runLB() {
+  const algo = document.getElementById('lb-algo').value;
+  const reqs = document.getElementById('lb-requests').value;
+  document.getElementById('lb-servers').classList.remove('hidden');
+  document.getElementById('lb-log').innerHTML = '<div class="term-line dim">Simulating...</div>';
+  document.getElementById('lb-algo-label').textContent = {'round_robin':'Round Robin','weighted':'Weighted RR','ip_hash':'IP Hash'}[algo];
+  try {
+    const r = await fetch('/api/network/simulate-load-balancer', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({algorithm: algo, requests: parseInt(reqs)})
+    });
+    const d = await r.json();
+    const total = d.total_requests;
+    const s1 = d.servers[0].requests_served;
+    const s2 = d.servers[1].requests_served;
+    document.getElementById('lb-count1').textContent = s1 + ' req';
+    document.getElementById('lb-count2').textContent = s2 + ' req';
+    document.getElementById('lb-bar1').style.width = Math.round(s1/total*100) + '%';
+    document.getElementById('lb-bar2').style.width = Math.round(s2/total*100) + '%';
+
+    let log = '';
+    d.distribution.forEach(req => {
+      const cls = req.server === 'webapp1' ? 'term-blue' : 'term-purple';
+      log += `<div class="term-line"><span class="term-prompt">#${String(req.request_num).padStart(2,'0')} </span><span class="${cls}">${req.server}</span> &larr; ${req.client_ip} <span class="dim">(${req.response_time_ms}ms)</span></div>`;
+    });
+    document.getElementById('lb-log').innerHTML = log;
+  } catch(e) {
+    document.getElementById('lb-log').innerHTML = termLine('Error: ' + e.message, 'term-error');
+  }
+}
+
+// ── Enter key bindings ─────────────────────────────────
+document.getElementById('ping-host').addEventListener('keydown', e => e.key==='Enter' && runPing());
+document.getElementById('dns-host').addEventListener('keydown', e => e.key==='Enter' && runDNS());
+document.getElementById('cidr-input').addEventListener('keydown', e => e.key==='Enter' && runSubnet());
+</script>
+{% endblock %}

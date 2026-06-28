@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Create Post Card -->
+<div class="card">
+  <div class="post-header">
+    <div class="post-avatar">
+      <img src="https://via.placeholder.com/40" alt="Profile">
+    </div>
+    <div style="flex:1;">
+      <a href="{{ url_for('main.create_post') }}"
+        style="display:block; background:#f0f2f5; padding:10px 15px; border-radius:20px; color:#65676b; text-decoration:none; font-size:15px;">
+        What's on your mind, {{ current_user.username }}?
+      </a>
+    </div>
+  </div>
+  <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 10px 0;">
+  <div style="display:flex; justify-content:space-around;">
+    <div style="color:#f3425f; font-weight:600; padding:5px;"><i class="fas fa-video"></i> Live Video</div>
+    <div style="color:#45bd62; font-weight:600; padding:5px;"><i class="fas fa-images"></i> Photo/Video</div>
+    <div style="color:#f7b928; font-weight:600; padding:5px;"><i class="fas fa-smile"></i> Feeling/Activity</div>
+  </div>
+</div>
+
+<!-- Posts Feed -->
+{% for post in posts %}
+<div class="card">
+  <div class="post-header">
+    <div class="post-avatar">
+      <img src="https://via.placeholder.com/40" alt="{{ post.author.username }}">
+    </div>
+    <div class="post-info">
+      <h4><a href="{{ url_for('main.profile', username=post.author.username) }}"
+          style="color:var(--text-color); text-decoration:none;">{{ post.author.username }}</a></h4>
+      <span>{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+    </div>
+  </div>
+
+  <div class="post-content">
+    {{ post.content }}
+  </div>
+
+  <!-- Placeholder for post image if exists -->
+  {% if post.image_url %}
+  <div style="margin: -16px -16px 10px -16px;">
+    <img src="{{ post.image_url }}" style="width:100%; display:block;">
+  </div>
+  {% endif %}
+
+  <div class="post-actions">
+    <button class="action-btn"><i class="far fa-thumbs-up"></i> Like</button>
+    <button class="action-btn"><i class="far fa-comment-alt"></i> Comment</button>
+    <button class="action-btn"><i class="fas fa-share"></i> Share</button>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}
